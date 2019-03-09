@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary"
+    android:orientation="horizontal"
+    android:layout_gravity="center"
+    android:padding="10dp"
+    android:focusable="false"
+    >
+
+    <TextView
+        android:id="@+id/txtReception"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:layout_weight="4"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:textSize="20dp"
+        />
+
+    <Button
+        android:id="@+id/btnText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:layout_margin="5dp"
+        android:visibility="invisible"
+        android:background="@drawable/chat"
+        android:drawableRight="@android:drawable/sym_action_chat"
+        android:padding="10dp"
+        android:focusable="true"
+        />
+
+    <Button
+        android:id="@+id/btnCall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#fff"
+        android:textStyle="bold"
+        android:layout_margin="5dp"
+        android:padding="10dp"
+        android:focusable="true"
+        android:drawableRight="@android:drawable/sym_action_call"
+        android:background="@drawable/chat"
+        />
+
+</LinearLayout>
