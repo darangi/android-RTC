@@ -36,10 +36,10 @@ public class dialog {
                                 /** DO THE METHOD HERE WHEN PROCEED IS CLICKED*/
                                 String user_text = (userInput.getText()).toString();
                                     if(user_text.equals(context.getResources().getString(R.string.password))) {
-                                        SharedPreferences settings = context.getSharedPreferences(context.getResources().getString(R.string.pref_key),MODE_PRIVATE);
-                                        SharedPreferences.Editor editor = settings.edit();
-                                        editor.clear();
-                                        editor.commit();
+//                                        SharedPreferences settings = context.getSharedPreferences(context.getResources().getString(R.string.pref_key),MODE_PRIVATE);
+//                                        SharedPreferences.Editor editor = settings.edit();
+//                                        editor.clear();
+//                                        editor.commit();
                                         CallFragment fragment = (CallFragment)mContext;
                                         fragment.FragmentHandler(SET_UP);
 

@@ -5,10 +5,42 @@
     android:orientation="vertical"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:id="@+id/setup"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:background="@color/colorPrimaryDark"
     tools:context=".set_up" >
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <ImageButton
+            android:id="@+id/back"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/arrow"
+            android:layout_alignParentLeft="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+android:layout_centerHorizontal="true"            android:textColor="#fff"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:text="Settings" />
+        <ImageButton
+            android:id="@+id/unpin"
+             android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/unpin"
+            android:layout_alignParentRight="true"
+            />
+
+    </RelativeLayout>
+
     <EditText
         android:id="@+id/serverAddress"
         android:layout_width="fill_parent"
@@ -16,7 +48,7 @@
         android:hint="Server Address"
         android:text="http://178.128.42.16:7000"
         android:inputType="text"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         />
@@ -75,19 +107,7 @@
         android:height="50dp"
         android:background="@color/colorPrimary"
         />
-    <Button
-        android:id="@+id/btnUnlock"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="unlock"
-        android:layout_gravity="center"
-        android:text="Unpin screen"
-        android:layout_margin="10dp"
-        android:textColor="#ffffff"
 
-        android:height="50dp"
-        android:background="@color/colorDanger"
-        />
     <Button
         android:id="@+id/btnRemoveDpm"
         android:layout_width="match_parent"
@@ -99,7 +119,7 @@
         android:textColor="#ffffff"
 
         android:height="50dp"
-        android:background="@color/colorDanger"
+        android:background="@color/colorPrimary"
         />
 
 </LinearLayout>

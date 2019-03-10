@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.telecom.Call;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,7 +26,7 @@ import io.socket.client.Socket;
 import static android.content.Context.MODE_PRIVATE;
 
 public class IncomingCallFragment extends Fragment {
-    private static MediaPlayer ringTone;
+    private MediaPlayer mp;
     private NotificationManager manager;
     private Socket socket;
     private  String deviceId;
@@ -57,6 +56,15 @@ public class IncomingCallFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull final View view, @Nullable Bundle savedInstanceState)
     {
+        if(isAdded()){
+            new android.os.Handler().postDelayed(
+                        new Runnable() {
+                            public void run() {
+                                ring();
+                            }
+                        },
+                    500);
+        }
         view.findViewById(R.id.answer).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -82,10 +90,9 @@ public class IncomingCallFragment extends Fragment {
     public void answer(){
         Intent intent =  new Intent(getContext(),MainActivity.class);
         intent.putExtra("deviceId",deviceId);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+        requireFragmentManager().popBackStackImmediate();
         JSONObject data = new JSONObject();
         try{
             data.put("deviceId",deviceId);
@@ -99,8 +106,13 @@ public class IncomingCallFragment extends Fragment {
     }
 
     private void stopRingTone() {
-        CallFragment fragment = (CallFragment) getActivity();
-        fragment.stopRingTone();
+        try{
+            mp.stop();
+            mp.release();
+        }
+        catch (Exception e){
+
+        }
     }
 
     @Override
@@ -145,5 +157,20 @@ public class IncomingCallFragment extends Fragment {
         }
     }
 
-
+    public void ring(){
+        try {
+            prepareToRing();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d("RING TONE ERROR",e.getMessage());
+        }
+                if(deviceId == "admin"){
+                    socket.emit("receptionIsRinging");
+                }
+    }
+    public  void prepareToRing(){
+        Uri ringtoneUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        mp = MediaPlayer.create(getContext(),ringtoneUri);
+        mp.start();
+    }
 }

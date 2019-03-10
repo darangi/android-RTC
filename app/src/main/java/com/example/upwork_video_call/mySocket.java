@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -89,6 +90,14 @@ public  class mySocket extends Application {
                         }
                         if(!isActivityVisible()){
                             activityVisible = true;
+                            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+                            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                                    "MyApp::MyWakelockTag");
+                            if(wakeLock.isHeld()){
+                                wakeLock.release();
+
+                            }
+                            wakeLock.acquire();
                             Intent intent = new Intent(context,CallFragment.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
                             intent.putExtra("deviceId",deviceId);
                             intent.putExtra("deviceName",deviceName);

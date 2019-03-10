@@ -23,8 +23,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,7 +40,7 @@ public class SetupFragment extends Fragment {
     private  EditText serverAddress;
     private  EditText receptionAddress;
     private  Button btnSave;
-    private  Button btnUnlock;
+    private  ImageButton btnUnlock;
     private  Button btnRemoveDpm;
     private  String position;
     private RadioGroup radioGroup;
@@ -46,6 +49,13 @@ public class SetupFragment extends Fragment {
     final int RECEPTION = 2;
     SharedPreferences pref;
     String MY_PREFS_NAME;
+    private RadioButton radioReception;
+    private RadioButton radioOffice;
+    private  LinearLayout parentView;
+    private String address;
+    private ImageButton btnGoBack;
+    private String receptionLocation;
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -72,9 +82,16 @@ public class SetupFragment extends Fragment {
         serverAddress =  view.findViewById(R.id.serverAddress);
         receptionAddress = view.findViewById(R.id.receptionAddress);
         btnSave = view.findViewById(R.id.btlogin);
-        btnUnlock = view.findViewById(R.id.btnUnlock);
+        radioReception = view.findViewById(R.id.reception);
+        radioOffice = view.findViewById(R.id.office);
+        btnUnlock = view.findViewById(R.id.unpin);
+        btnGoBack = view.findViewById(R.id.back);
         btnRemoveDpm = view.findViewById(R.id.btnRemoveDpm);
         radioGroup = view.findViewById(R.id.position);
+        parentView = view.findViewById(R.id.setup);
+
+        address =  pref.getString("server",null);
+        receptionLocation = pref.getString("receptionLocation",null);
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -88,16 +105,29 @@ public class SetupFragment extends Fragment {
                 }
             }
         });
+        setDefaultValues();
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                save();
+                if(btnSave.getText().toString().equalsIgnoreCase("Edit Settings")){
+                       btnSave.setText("Save");
+                        enableChildViews(true);
+                }
+                else{
+                    save();
+                }
             }
         });
         btnUnlock.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 unlock();
+            }
+        });
+        btnGoBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goBack();
             }
         });
         btnRemoveDpm.setOnClickListener(new View.OnClickListener() {
@@ -115,13 +145,62 @@ public class SetupFragment extends Fragment {
                                 fragment.removeDPM();
                             }
                         })
-                        // A null listener allows the button to dismiss the dialog and take no further action.
+                        // A nu ll listener allows the button to dismiss the dialog and take no further action.
                         .setNegativeButton(android.R.string.no, null)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .show();
             }
         });
     }
+
+    private void setDefaultValues() {
+        if(address != null && !address.isEmpty()){
+            serverAddress.setText(address);
+
+        }
+        if(receptionLocation != null && !receptionLocation.isEmpty()){
+            receptionAddress.setText(receptionLocation);
+        }
+        if(position != null){
+            btnSave.setText("Edit Settings");
+            if(position.equalsIgnoreCase("office")){
+                radioOffice.setChecked(true);
+            }
+            else{
+                radioReception.setChecked(true);
+                receptionAddress.setVisibility(View.VISIBLE);
+            }
+            //disable fields;
+            enableChildViews(false);
+        }
+    }
+
+    public void goBack(){
+        CallFragment fragment = (CallFragment)getActivity();
+           if(position != null){
+               if(position.equalsIgnoreCase("Office")){
+                   fragment.FragmentHandler(OFFICE);
+               }
+               else{
+                   fragment.FragmentHandler(RECEPTION);
+               }
+           }
+           else{
+               getActivity().finish();
+           }
+    }
+
+    private void enableChildViews(boolean enable) {
+
+        for (int i = 0; i < parentView.getChildCount(); i++) {
+            View child = parentView.getChildAt(i);
+            if(child.getId() != R.id.unpin && child.getId() != R.id.back && child.getId() != R.id.btlogin){
+                child.setEnabled(enable);
+            }
+        }
+
+    }
+
     public  void unlock(){
         try{
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -153,6 +232,7 @@ public class SetupFragment extends Fragment {
             editor.putString("deviceId",deviceId);
             editor.apply();
             startActivity(new Intent(getContext(),CallFragment.class));
+            getActivity().finish();
 //            CallFragment fragment = (CallFragment)getActivity();
 //            if(position.equalsIgnoreCase("Office")){
 //                fragment.FragmentHandler(OFFICE);

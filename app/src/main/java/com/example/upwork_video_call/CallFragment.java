@@ -3,7 +3,6 @@ package com.example.upwork_video_call;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.SystemUpdatePolicy;
 import android.content.BroadcastReceiver;
@@ -14,9 +13,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -46,7 +42,6 @@ import java.util.List;
 
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-import static java.security.AccessController.getContext;
 
 public class CallFragment extends FragmentActivity {
     SharedPreferences pref;
@@ -57,7 +52,6 @@ public class CallFragment extends FragmentActivity {
     final int RECEPTIONS = 4;
     private  DevicePolicyManager mDevicePolicyManager;
     private ComponentName mAdminComponentName;
-    private  MediaPlayer ringTone;
     private PackageManager mPackageManager;
     private  String deviceId,deviceName,position;
     private  Boolean isRinging = false;
@@ -65,9 +59,7 @@ public class CallFragment extends FragmentActivity {
     private  IncomingCallFragment fragment;
     private Boolean isDeviceOwner;
     private Boolean lastFragmentWasReceptions = false;
-    private MediaPlayer mp;
-    private  AudioManager am;
-    private NotificationManager mNotificationManager;
+    private Boolean lastFragmentWasSettings = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -92,8 +84,6 @@ public class CallFragment extends FragmentActivity {
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "MyApp::MyWakelockTag");
         wakeLock.acquire();
-        am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        ringTone = new MediaPlayer();
         LocalBroadcastManager.getInstance(this).registerReceiver(listener, new IntentFilter("UPWORK"));
         LocalBroadcastManager.getInstance(this).registerReceiver(hangup, new IntentFilter("HANGUP"));
         LocalBroadcastManager.getInstance(this).registerReceiver(answer, new IntentFilter("UPWORK-RECEPTION-ANSWER"));
@@ -106,6 +96,10 @@ public class CallFragment extends FragmentActivity {
 
         if (mDevicePolicyManager.isDeviceOwnerApp(getPackageName())) {
             setDefaultCosuPolicies(true);
+        }
+        else{
+
+            getPackageManager().clearPackagePreferredActivities(getPackageName());
         }
         if(checkAndRequestPermission()) {
             if (position == null) {
@@ -127,14 +121,6 @@ public class CallFragment extends FragmentActivity {
         }
 
 
-    }
-
-    public void prepareToRing(){
-        AudioManager am=(AudioManager)this.getSystemService(AUDIO_SERVICE);
-        am.setMode(AudioManager.STREAM_RING);
-        Uri ringtoneUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        mp = MediaPlayer.create(CallFragment.this,ringtoneUri);
-        mp.start();
     }
     public Boolean checkAndRequestPermission(){
         String[] appPermissions = {
@@ -198,11 +184,8 @@ public class CallFragment extends FragmentActivity {
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void setDefaultCosuPolicies(boolean active){
         // set user restrictions
-//        setUserRestriction(UserManager.DISALLOW_SAFE_BOOT, active);
-//        setUserRestriction(UserManager.DISALLOW_FACTORY_RESET, active);
         setUserRestriction(UserManager.DISALLOW_ADD_USER, active);
         setUserRestriction(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA, active);
-//        setUserRestriction(UserManager.DISALLOW_ADJUST_VOLUME, active);
 
         // disable keyguard and status bar
         mDevicePolicyManager.setKeyguardDisabled(mAdminComponentName, active);
@@ -295,13 +278,30 @@ public class CallFragment extends FragmentActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(hangup);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(listener);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(answer);
-        stopRingTone();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mySocket.activityPaused();
+        super.onDestroy();
+
     }
 
     @Override
     public void onBackPressed() {
         if(lastFragmentWasReceptions){
             FragmentHandler(OFFICE);
+            return;
+        }
+        if(lastFragmentWasSettings){
+            if(position != null){
+                if(position.equalsIgnoreCase("office")){
+                    FragmentHandler(OFFICE);
+                }
+                else{
+                    FragmentHandler(RECEPTION);
+                }
+            }
             return;
         }
         super.onBackPressed();
@@ -324,33 +324,23 @@ public class CallFragment extends FragmentActivity {
             }
         }
     }
-    public void stopRingTone() {
-        try{
-            if(mp.isPlaying()) {
-                mp.stop();
-                mp.release();
-            }
-        }
-        catch (Exception e){
 
-        }
-    }
     public void FragmentHandler(int val)
     {
         fragmentTransaction = getSupportFragmentManager().beginTransaction();
         lastFragmentWasReceptions = false;
+        lastFragmentWasSettings = false;
         isRinging = false;
         switch (val)
         {
             case SET_UP:
+                lastFragmentWasSettings = true;
                 fragmentTransaction.replace(R.id.mainContainer, new SetupFragment(),"SET_UP");
                 break;
             case OFFICE:
-                stopRingTone();
                 fragmentTransaction.replace(R.id.mainContainer, new OfficeFragment());
                 break;
             case RECEPTION:
-                stopRingTone();
                 if(isDeviceOwner) {
                     pinScreen();
                 }
@@ -378,15 +368,6 @@ public class CallFragment extends FragmentActivity {
                 if(getIntent().getStringExtra("deviceId") != null){
                     getIntent().removeExtra("deviceName");
                 }
-
-            new android.os.Handler().postDelayed(
-                        new Runnable() {
-                            public void run() {
-                                prepareToRing();
-                            }
-                        },
-                    500);
-
                 fragmentTransaction.replace(R.id.mainContainer,fragment);
                 break;
         }
@@ -405,65 +386,10 @@ public class CallFragment extends FragmentActivity {
         fragTransaction.commitAllowingStateLoss();
 
     }
-    protected void changeInterruptionFiler(int interruptionFilter){
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){ // If api level minimum 23
-            /*
-                boolean isNotificationPolicyAccessGranted ()
-                    Checks the ability to read/modify notification policy for the calling package.
-                    Returns true if the calling package can read/modify notification policy.
-                    Request policy access by sending the user to the activity that matches the
-                    system intent action ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS.
-
-                    Use ACTION_NOTIFICATION_POLICY_ACCESS_GRANTED_CHANGED to listen for
-                    user grant or denial of this access.
-
-                Returns
-                    boolean
-
-            */
-            // If notification policy access granted for this package
-            if(mNotificationManager.isNotificationPolicyAccessGranted()){
-                /*
-                    void setInterruptionFilter (int interruptionFilter)
-                        Sets the current notification interruption filter.
-
-                        The interruption filter defines which notifications are allowed to interrupt
-                        the user (e.g. via sound & vibration) and is applied globally.
-
-                        Only available if policy access is granted to this package.
-
-                    Parameters
-                        interruptionFilter : int
-                        Value is INTERRUPTION_FILTER_NONE, INTERRUPTION_FILTER_PRIORITY,
-                        INTERRUPTION_FILTER_ALARMS, INTERRUPTION_FILTER_ALL
-                        or INTERRUPTION_FILTER_UNKNOWN.
-                */
-
-                // Set the interruption filter
-                mNotificationManager.setInterruptionFilter(interruptionFilter);
-            }else {
-                /*
-                    String ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS
-                        Activity Action : Show Do Not Disturb access settings.
-                        Users can grant and deny access to Do Not Disturb configuration from here.
-
-                    Input : Nothing.
-                    Output : Nothing.
-                    Constant Value : "android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS"
-                */
-                // If notification policy access not granted for this package
-                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-                startActivity(intent);
-            }
-        }
-    }
-
-
     private BroadcastReceiver listener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent ) {
             if(!isRinging){
-                changeInterruptionFiler(NotificationManager.INTERRUPTION_FILTER_ALL);
                 deviceId = intent.getStringExtra("deviceId");
                 deviceName = intent.getStringExtra("deviceName");
                 FragmentHandler(INCOMING_CALL_SCREEN);
@@ -482,8 +408,6 @@ public class CallFragment extends FragmentActivity {
             else {
                 FragmentHandler(RECEPTION);
             }
-            stopRingTone();
-
         }
     };
     private BroadcastReceiver answer = new BroadcastReceiver() {
@@ -492,7 +416,6 @@ public class CallFragment extends FragmentActivity {
             deviceId = intent.getStringExtra("deviceId");
             intent = new Intent(context,MainActivity.class);
             intent.putExtra("deviceId",deviceId);
-            stopRingTone();
             startActivity(intent);
         }
     };
